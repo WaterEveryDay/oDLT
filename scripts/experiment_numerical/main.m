@@ -29,7 +29,7 @@ K = [1/dx, 0, 320; 0, 1/dy, 240; 0, 0, 1]; %eye(3);
 verbose = true;
 
 % Monte Carlo
-nmc = 10;
+nmc = 100;
 
 mode = "centered";
 precise_timing = false;
@@ -40,13 +40,16 @@ sig_u = 1;
 outlier_percentage = 0;
 
 % parameter changing, select
-var_changing = "timing";
+var_changing = "n";
 
 n_meas_vec = 10:10:100;
-n_meas_vec_timing = floor(logspace(1, 4, 5));
+n_meas_vec_timing = floor(logspace(1, 3.3, 20));
 % n_meas_vec = [10, 100, 500, 1000];
 sig_u_vec = [0.001, 1:5];
 outlier_percentage_vec = [0, 5, 10, 15, 20, 25];
+
+% calibrated experiment?
+calibrated = true;
 
 switch var_changing
     case "n"
@@ -77,6 +80,7 @@ end
 Sig_uu = diag([sig_u^2, sig_u^2, 0]);
 
 %% define method names and functions to call
+if calibrated
 method_names = ["DLT", "nDLT", "nDLT+GN", ...
     "EPNP", "EPnP+GN", "CPnP", ...
     "RPnP", "OPnP", ...
@@ -91,8 +95,33 @@ linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
 markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
 colors = colormap(turbo(10));
 n_methods = length(method_names);
+else
+    idx = [2, 9];
+    method_names = ["DLT", "nDLT (uncal)", "nDLT+GN", ...
+    "EPNP", "EPnP+GN", "CPnP", ...
+    "RPnP", "OPnP", ...
+    "oDLT (uncal) (ours)", "oDLT+LOST (ours)"];
 
-%% define bounding boxes for spwaning 3D points
+funs = {@pnp_dlt, @pnp_dlt_normalized_uncalibrated, @pnp_dlt_normalized_gn, ...
+    @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
+    @pnp_rpnp, @pnp_opnp, ...
+    @pnp_odlt_uncalibrated, @pnp_odlt_lost};
+
+linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
+markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
+colors = colormap(turbo(10));
+
+
+method_names = method_names(idx);
+funs = funs(idx);
+linestyles = linestyles(idx);
+markerstyles = markerstyles(idx);
+colors = colors(idx, :);
+
+n_methods = length(method_names);
+end
+
+%% define bounding boxes for spawning 3D points
 switch mode
     case "centered"
         bbox = [-2, -2, 4; 2, 2, 8];
@@ -112,6 +141,10 @@ aggregate_err_rot_all = zeros(n_changing, n_methods);
 aggregate_err_rot_95_percentile_all = zeros(n_changing, n_methods);
 aggregate_err_pos_all = zeros(n_changing, n_methods);
 aggregate_err_reproj_all = zeros(n_changing, n_methods);
+aggregate_err_fx_all = zeros(n_changing, n_methods);
+aggregate_err_fy_all = zeros(n_changing, n_methods);
+aggregate_err_cx_all = zeros(n_changing, n_methods);
+aggregate_err_cy_all = zeros(n_changing, n_methods);
 aggregate_time_all = zeros(n_changing, n_methods);
 
 % The true projection from 3D to pixel
@@ -133,6 +166,10 @@ for ii = 1:n_changing
     err_rot_all = zeros(nmc, n_methods);
     err_pos_all = zeros(3, nmc, n_methods);
     err_reproj_all = zeros(nmc, n_methods);
+    err_fx_all = zeros(nmc, n_methods);
+    err_fy_all = zeros(nmc, n_methods);
+    err_cx_all = zeros(nmc, n_methods);
+    err_cy_all = zeros(nmc, n_methods);
     time_all = zeros(nmc, n_methods);
 
     % iterate over the monte carlo
@@ -155,40 +192,45 @@ for ii = 1:n_changing
             repmat(ubox(2,:)',1, n_outlier), 2, n_outlier);
         % compute pose for each method
         for method_id = 1:n_methods
-            nArgs = nargin(funs{method_id});
+            n_args_in = nargin(funs{method_id});
+            n_args_out = nargout(funs{method_id});
             
-            % does one round just to pre-heat memory
-            % important because timing will be off for first one
-            % [~, ~] = funs{1}(X', Utilde', K);
-            % switch nArgs
-            %     case 3
-                    methodtimer = tic;
-                    [R_hat, t_hat] = funs{method_id}(X', Utilde', K);
-                    runtime = toc(methodtimer);
-                    r_hat = -R_hat'*t_hat;
-                    if precise_timing
-                        f = @() funs{method_id}(X', Utilde', K);
-                        runtime = timeit(f);
-                    end
-            %     case 4
-            %         % % does one round just to pre-heat memory
-            %         % % important otherwise timing will be off for first one
-            %         % [~, ~, ~] = funs{method_id}(X', Utilde', K, Sig_uu);
-            %         methodtimer = tic;
-            %         [R_hat, t_hat] = funs{method_id}(X', Utilde', K, Sig_uu);
-            %         runtime = toc(methodtimer);
-            %         r_hat = -R_hat'*t_hat;
-            %         if precise_timing
-            %             f = @() funs{method_id}(X', Utilde', K, Sig_uu);
-            %             runtime = timeit(f);
-            %         end
-            % end
+            switch n_args_in
+                case 2
+                    args = {X', Utilde'};
+                case 3
+                    args = {X', Utilde', K};
+               case 4
+                    args = {X', Utilde', K};
+            end
+            
+            methodtimer = tic;
+            switch n_args_out
+                case 2
+                    [R_hat, t_hat] = funs{method_id}(args{:});
+                    K_hat = K;
+                case 3
+                    [R_hat, t_hat, K_hat] = funs{method_id}(args{:});
+            end
+            runtime = toc(methodtimer);
+            r_hat = -R_hat'*t_hat;
+
+            if precise_timing
+                f = @() funs{method_id}(args{:});
+                runtime = timeit(f);
+            end
+
             err_rot_all(i, method_id) = err_DCM(R_hat, R_I2C);
             err_pos_all(:, i, method_id) = r_hat - r;
-            Hhat = K*R_hat*[eye(3), -r_hat];
+            Hhat = K_hat*R_hat*[eye(3), -r_hat];
             err_reproj_all(i, method_id) = reprojection_error_using_matrix(Utilde, X, Hhat);
-            % err_reproj_all(i, method_id) = reprojection_error_usingRT(X', Utilde', R_hat, -R_hat*r_hat, K);
             time_all(i, method_id) = runtime;
+
+            err_fx_all(i, method_id) = K(1,1) - K_hat(1,1);
+            err_fy_all(i, method_id) = K(2,2) - K_hat(2,2);
+            err_cx_all(i, method_id) = K(1,3) - K_hat(1,3);
+            err_cy_all(i, method_id) = K(2,3) - K_hat(2,3);
+
         end
     end
     
@@ -200,6 +242,11 @@ for ii = 1:n_changing
     end
     aggregate_err_reproj_all(ii,:) = mean(err_reproj_all, 1);
     aggregate_time_all(ii,:) = mean(time_all, 1);
+
+    aggregate_err_fx_all(ii,:) = sqrt(mean(err_fx_all.^2, 1));
+    aggregate_err_fy_all(ii,:) = sqrt(mean(err_fy_all.^2, 1));
+    aggregate_err_cx_all(ii,:) = sqrt(mean(err_cx_all.^2, 1));
+    aggregate_err_cy_all(ii,:) = sqrt(mean(err_cy_all.^2, 1));
 
     if verbose
         fprintf("n_meas = %i\n", n_meas)
@@ -220,6 +267,32 @@ for ii = 1:n_changing
         for method_id = 1:n_methods
             fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_err_reproj_all(ii, method_id));
         end
+        
+        if ~calibrated
+            disp("### fx RMSE")
+            for method_id = 1:n_methods
+                fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_err_fx_all(ii, method_id));
+            end
+
+            disp("### fy RMSE")
+            for method_id = 1:n_methods
+                fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_err_fy_all(ii, method_id));
+            end
+
+            disp("### cx RMSE")
+            for method_id = 1:n_methods
+                fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_err_cx_all(ii, method_id));
+            end
+
+            disp("### cy RMSE")
+            for method_id = 1:n_methods
+                fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_err_cy_all(ii, method_id));
+            end
+        end
+
+
+
+
         disp("### run times (s)")
         for method_id = 1:n_methods
             fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_time_all(ii, method_id));
@@ -232,7 +305,7 @@ end
 figure
 fontsize_ax = 16;
 fontsize_label = 20;
-set(gcf,'Position',[100 100 1600 400])
+set(gcf,'Position',[100 100 1600 300])
 
 t = tiledlayout(1, 4, 'TileSpacing', 'compact', 'Padding', 'compact');
 % rotation error
@@ -354,6 +427,7 @@ xlim([min(vec_changing), max(vec_changing)])
 box on;
 set(gca,'linewidth',2)
 grid on;
+exportgraphics(t4, "figs/runtimes.pdf")
 
 
 % Get the tile objects
@@ -398,33 +472,7 @@ for i = 1:length(tiles)
     close(fig)
 end
 
-% nexttile(1);  % Activate the first tile
-% print(gca, 'figs/'+var_changing+'_'+mode+'_rotation_plot.png', '-dpng', '-r300');  % Save as PNG
-
-%print(t1, 'figs/'+var_changing+'_'+mode+'_rotation_plot.png');
-%print(t2, 'figs/'+var_changing+'_'+mode+'_position_plot.png');
-%print(t3, 'figs/'+var_changing+'_'+mode+'_reprojection_plot.png');
-
-% exportgraphics(t1, 'figs/'+var_changing+'_'+mode+'_rotation_plot.png', Width=width, Height=height, Units="points");
-% exportgraphics(t2, 'figs/'+var_changing+'_'+mode+'_position_plot.png', Padding="tight");
-% exportgraphics(t3, 'figs/'+var_changing+'_'+mode+'_reprojection_plot.png', Padding="tight");
-% exportgraphics(t4, 'figs/'+var_changing+'_'+mode+'_runtime_plot.png', Padding="tight");
-% saveas(gca, 'figs/'+var_changing+'_'+mode+'_runtime_plot.png')
 legend(method_names);
-
-% ax = gca;
-% grid on
-% ax.MinorGridLineWidth = 0.7;
-% background_color = [0.95, 0.95, 0.95];
-% ax.Color = background_color;
-% ax.Box = 'on';
-% ax.LineWidth = 2.0;
-% 
-% set(gcf, 'Position', [500, 500, 300, 250]);
-% set(gca, 'Position', [0.12, 0.15, 0.785, 0.785]);
-% exportgraphics(gcf, "figs/2v_"+varChanging+"_relative_RMSE.pdf")
-% savefig("figs/2v_"+varChanging+"_relative_RMSE.fig")
-% saveas(gcf, "figs/2v_"+varChanging+"_relative_RMSE.png")
 
 
 %% graph for the legends

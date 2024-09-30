@@ -33,8 +33,17 @@ for method_id = 1:n_methods
         
         nArgs = nargin(funs{method_id});
         rng(1)
+        
+        switch nArgs
+            case 2
+                args = {p_all', u_all'};
+            case 3
+                args = {p_all', u_all', K};
+            case 4
+                    args = {p_all', u_all', K};
+        end
         methodtimer = tic;
-        [R_hat, t_hat] = funs{method_id}(p_all', u_all', K);
+        [R_hat, t_hat] = funs{method_id}(args{:});
         runtime = toc(methodtimer);
 
         r_hat = -R_hat'*t_hat;

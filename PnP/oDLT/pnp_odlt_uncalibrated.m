@@ -1,5 +1,5 @@
-function [R, t] = ... %hbar_uncalibrated, cov_hbar_uncalibrated] = ...
-    pnp_odlt(X, U, K, Sig_uu)
+function [R, t, K] = ... %hbar_uncalibrated, cov_hbar_uncalibrated] = ...
+    pnp_odlt_uncalibrated(X, U, Sig_uu)
 % X = 3xn: 3D points in world
 % U = 3xn: 2D pixel measurements
 % K = 3x3: Calibration matrix
@@ -19,7 +19,6 @@ if nargin < 4
 end
 
 n = size(X, 1);
-K_inv = invert_K(K);
 
 % normalize the measurements and 3D points for a better behaviour
 [X_scaled, T_X, ~] = normalize_points3D(X);
@@ -52,13 +51,11 @@ h = V(:,end);
 % cov_h = inv(A'*A);
 cov_h = V * diag(1 ./ diag(Sig.^2)) * V';
 
-% compute vec(inv(K) * inv(T_U) * H * T_X)
-% and its covariance
-[h, cov_h] = denormalize_kronecker(h, cov_h, K_inv, T_U_inv, T_X);
 
-% solve the Weighted Orthogonal Procrustes Problem
-[R, t] = h_to_se3_with_cov_procrustes(h, cov_h);
-
+% de-normalize and un-calibrate the camera matrix
+H = reshape(h, 3, 4);
+H = T_U_inv * H * T_X;
+[R, t, K] = decompose_P(H);
 end
     
 

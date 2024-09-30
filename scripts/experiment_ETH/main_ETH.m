@@ -2,6 +2,7 @@ clear all
 close all
 clc
 profile off
+addpath utils/
 
 scene_list = ["courtyard", "delivery_area", "electro", "facade", "kicker", "lounge", "meadow", "office", "playground", "relief", "terrace", "terrains"];
 
@@ -21,7 +22,7 @@ method_names = ["DLT", "nDLT", "nDLT+GN", ...
 funs = {@pnp_dlt, @pnp_dlt_normalized, @pnp_dlt_normalized_gn, ...
     @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
     @pnp_rpnp, @pnp_opnp, ...
-    @pnp_opt_dlt_procrustes, @pnp_opt_dlt_lost_procrustes};
+    @pnp_odlt, @pnp_odlt_lost};
 
 linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
 markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];

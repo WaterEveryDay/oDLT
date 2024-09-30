@@ -1,4 +1,4 @@
-function [R, t] = h_to_se3_with_cov(h, cov_h)
+function [R, t] = h_to_se3_with_cov_procrustes(h, cov_h)
     % inputs
     % h: 12x1: wrongly scaled and unorthogonalized camera matrix H = [R, -R'*r]
     % cov_h: 12x12: covariance of h
