@@ -1,2 +1,4 @@
 # oDLT
-optimal DLT-based PnP methods
+optimal DLT-based PnP methods.
+
+![plot](./pareto.png)
