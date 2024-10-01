@@ -1,8 +1,18 @@
 clear all
 close all
 clc
-profile off
+
+addpath ../../PnP/oDLT/;
+addpath ../../PnP/EPnP/
+addpath ../../PnP/RPnP/func;
+addpath ../../PnP/CPnP/CPnP/
+addpath ../../PnP/OPnP;
+addpath ../../utils/
+
 addpath utils/
+addpath ../../utils/
+
+profile off
 
 scene_list = ["courtyard", "delivery_area", "electro", "facade", "kicker", "lounge", "meadow", "office", "playground", "relief", "terrace", "terrains"];
 
@@ -37,7 +47,6 @@ colors = colors(2:end,:);
 
 table_header(filename, method_names)
 for scene_id = 1:length(scene_list)
-    addpath ../functions/
     scene = scene_list(scene_id);
     type = "dslr"; % dslr: few views high res, rig: many views low res
     folder = folder_to_eth3d+scene+"/"+type+"_calibration_undistorted/";
@@ -231,7 +240,7 @@ for scene_id = 1:length(scene_list)
     end
     
     % profile on
-    compare_eth
-    % p = profile("info");
+    % compare_eth
+    p = profile("info");
     % profile off
 end
