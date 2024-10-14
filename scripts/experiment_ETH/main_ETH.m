@@ -240,7 +240,7 @@ for scene_id = 1:length(scene_list)
     end
     
     % profile on
-    % compare_eth
-    p = profile("info");
+    compare_eth
+    % p = profile("info");
     % profile off
 end

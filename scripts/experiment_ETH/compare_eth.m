@@ -40,7 +40,9 @@ for method_id = 1:n_methods
             case 3
                 args = {p_all', u_all', K};
             case 4
-                    args = {p_all', u_all', K};
+                args = {p_all', u_all', K};
+            case 5
+                args = {p_all', u_all', K};
         end
         methodtimer = tic;
         [R_hat, t_hat] = funs{method_id}(args{:});

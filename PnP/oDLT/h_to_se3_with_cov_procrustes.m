@@ -1,4 +1,4 @@
-function [R, t] = h_to_se3_with_cov_procrustes(h, cov_h)
+function [R, t] = h_to_se3_with_cov_procrustes(h, inv_cov_h)
     % inputs
     % h: 12x1: wrongly scaled and unorthogonalized camera matrix H = [R, -R'*r]
     % cov_h: 12x12: covariance of h
@@ -14,12 +14,11 @@ function [R, t] = h_to_se3_with_cov_procrustes(h, cov_h)
     h = h/scale;
     R_init = reshape(h(1:9), 3, 3);
     
-    if rank(cov_h) < 12
+    if rank(inv_cov_h) < 12
         [U, ~, V] = svd(R_init);
         R = U * diag([1, 1, det(U * V')]) * V';
     else
-        W = scale^2 * (cov_h)^(-1);
-        W = reshape(diag(W(1:9, 1:9)), 3, 3);
+        W = reshape(diag(inv_cov_h(1:9, 1:9)), 3, 3);
         R = weighted_orthogonal_procrustes_gn(R_init, W);
     end
     

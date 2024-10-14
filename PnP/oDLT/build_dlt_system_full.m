@@ -1,4 +1,4 @@
-function A = build_dlt_system(X, U)
+function A = build_dlt_system_full(X, U)
     % X = 3 x n: 3D points
     % U = 2 x n or 3 x n: pixel measurements
     n = size(X, 1);
@@ -23,8 +23,9 @@ function A = build_dlt_system(X, U)
     one = ones(n, 1);
 
     % fill A using vectorized operations
-    A = zeros(2*n, 12);
-    A(1:2:2*n,:) = [zero, -x, vx, zero, -y, vy, zero, -z, vz, zero, -one, v]; 
-    A(2:2:2*n,:) = [x,  zero, -ux, y,  zero, -uy, z, zero, -uz, one, zero, -u];
+    A = zeros(3*n, 12);
+    A(1:3:3*n,:) = [zero, -x, vx, zero, -y, vy, zero, -z, vz, zero, -one, v]; 
+    A(2:3:3*n,:) = [x,  zero, -ux, y,  zero, -uy, z, zero, -uz, one, zero, -u];
+    A(3:3:3*n,:) = [-vx, ux, zero, -vy, uy, zero, -vz, uz, zero, -v, u, zero];
 end
 

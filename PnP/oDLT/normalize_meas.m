@@ -18,6 +18,7 @@ function [Utilde, T, T_inv] = normalize_meas(U)
     % Step 4: Scale the points so that the average distance is sqrt(2)
     scale_factor = sqrt(2 / d2_avg);
     Utilde = scale_factor * U_translated;
+    Utilde(:,3) = ones(size(U, 1), 1);
 
     % Step 5: Construct the similarity transformation matrix T
     % T includes translation and scaling

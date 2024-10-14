@@ -29,7 +29,7 @@ A = build_dlt_system(X_scaled, U_scaled);
 
 % solve for an initial guess using a subset of the system
 n_small = min(2*n, min( max(30, floor(n/10)), 100) );
-
+% n_small = 2*n;
 % rng(1)
 [~,~,V] = svd(A(randperm(2*n, n_small), :), "econ");
 
@@ -48,9 +48,6 @@ A = kron(inv_scale_norm_sig', [1; 1]) .* A;
 % solve the system by finding smallest eigen vector of A^T A
 [~, Sig, V] = svd(A, 'econ');
 h = V(:,end);
-% cov_h = inv(A'*A);
-cov_h = V * diag(1 ./ diag(Sig.^2)) * V';
-
 
 % de-normalize and un-calibrate the camera matrix
 H = reshape(h, 3, 4);
