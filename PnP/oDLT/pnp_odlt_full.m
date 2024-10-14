@@ -57,8 +57,8 @@ cross_u_all(3,2,:) = U_scaled(:,1);
 % on the residual
 Sig_combined = reshape(scale_3.^2, 1, 1, n) .* Sig_uu_scaled;
 if nargin >= 5
-    Sig_xx_scaled = T_X .* Sig_pp_all .* T_X';
-    Sig_combined = Sig_combined + H_init(1:3,1:3)*Sig_pp_scaled_all*H_init(1:3,1:3)';
+    Sig_pp_scaled_all = pagemtimes(pagemtimes(T_X(1:3,1:3), Sig_pp_all), T_X(1:3,1:3)');
+    Sig_combined = Sig_combined + pagemtimes(pagemtimes(H_init(1:3,1:3), Sig_pp_scaled_all), H_init(1:3,1:3)');
 end
 Sig_eps_all = - pagemtimes(pagemtimes(cross_u_all, Sig_combined), cross_u_all);
 Sig_eps_pinv_all = pagepinv(Sig_eps_all);

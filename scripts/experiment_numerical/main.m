@@ -37,6 +37,7 @@ precise_timing = false;
 % default parameters
 n_meas = 50;
 sig_u = 1;
+sig_p = 0; % if we want to test pnp_odlt_full with 3D point uncertainty
 outlier_percentage = 0;
 
 % parameter changing, select
@@ -78,6 +79,7 @@ end
 
 %%
 Sig_uu = diag([sig_u^2, sig_u^2, 0]);
+Sig_pp = diag([sig_p^2, sig_p^2, sig_p^2]);
 
 %% define method names and functions to call
 if calibrated
@@ -89,7 +91,7 @@ method_names = ["DLT", "nDLT", "nDLT+GN", ...
 funs = {@pnp_dlt, @pnp_dlt_normalized, @pnp_dlt_normalized_gn, ...
     @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
     @pnp_rpnp, @pnp_opnp, ...
-    @pnp_odlt, @pnp_odlt_lost};
+    @pnp_odlt, @pnp_odlt_full};
 
 linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
 markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
@@ -141,6 +143,8 @@ aggregate_err_rot_all = zeros(n_changing, n_methods);
 aggregate_err_rot_95_percentile_all = zeros(n_changing, n_methods);
 aggregate_err_pos_all = zeros(n_changing, n_methods);
 aggregate_err_reproj_all = zeros(n_changing, n_methods);
+aggregate_bias_reproj_all = zeros(n_changing, n_methods);
+aggregate_std_reproj_all = zeros(n_changing, n_methods);
 aggregate_err_fx_all = zeros(n_changing, n_methods);
 aggregate_err_fy_all = zeros(n_changing, n_methods);
 aggregate_err_cx_all = zeros(n_changing, n_methods);
@@ -184,7 +188,7 @@ for ii = 1:n_changing
 
         % make pixel measurement noisy
         Utilde = U + mvnrnd([0; 0; 0], Sig_uu, n_meas)';
-
+        Xtilde = X + mvnrnd([0; 0; 0], Sig_pp, n_meas)';
         % outlier ratio
         % corrupt first measurements according to outlier ratio
         n_outlier = floor(outlier_percentage / 100 * n_meas);
@@ -197,11 +201,13 @@ for ii = 1:n_changing
             
             switch n_args_in
                 case 2
-                    args = {X', Utilde'};
+                    args = {Xtilde', Utilde'};
                 case 3
-                    args = {X', Utilde', K};
+                    args = {Xtilde', Utilde', K};
                case 4
-                    args = {X', Utilde', K};
+                    args = {Xtilde', Utilde', K, Sig_uu};
+               case 5
+                    args = {Xtilde', Utilde', K, Sig_uu, repmat(Sig_pp, 1, 1, n_meas)};
             end
             
             methodtimer = tic;
