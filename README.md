@@ -6,4 +6,4 @@ This repo contains fast MATLAB DLT implementations along with a new optimal weig
 - Numerical synthetic experiments are provided in the script.
 - We also added the real experiments. However, reproducing the real experiments (Vesta and ETH) require downloading the datasets and making sure the links are properly set.
 
-![plot](./pareto.png)
+![plot](./pareto_annotated.png)
