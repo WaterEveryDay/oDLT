@@ -1,10 +1,11 @@
+% Sebastien Henry
 close all
 clear all
 clc
 vesta_pt_cloud = pcread("/Users/sebastienhenry/Documents/datasets/Astrovision/vesta_3145k.ply");
 vesta_crater_table = readtable("/Users/sebastienhenry/Documents/datasets/vesta_crater_database/database_700m.xlsx");
 
-%%
+%% load the crater database and extract 3D positions of craters
 a_craters = longlat2cartesian(vesta_crater_table{:,'LONGITUDE_CIRCLE'}'*pi/180, vesta_crater_table{:,'LATITUDE_CIRCLE'}'*pi/180);
 crater_threshold = vesta_crater_table{:,"DIAM_CIRCLE"} < 100000 & vesta_crater_table{:,"DIAM_CIRCLE"} > 700;
 theta = pi/180*-150;
@@ -40,7 +41,7 @@ foreground_idx = depth <= depth_threshold;
 % Compute depth of each point (distance to camera)
 depth_crater = dot(p_craters' - camPos, repmat(camDir, size(p_craters', 1), 1), 2);
 foreground_idx_crater = depth_crater <= depth_threshold;
-%%
+%% plot Vesta
 figure
 normValues = vecnorm(vesta_points, 2, 2);
 % Plot the filtered point cloud
@@ -54,11 +55,9 @@ axis off
 grid off
 set(gcf, 'Color', 'w'); 
 
-%% load image
+%% load images
 addpath 'utils'
 dataset_name = "astrovision";
-scene_name = "2011205_rc3b";
-scene_name = "2011218_opnav_023";
 scene_name = "2011260_opnav_003";
 scene_path = "/Users/sebastienhenry/Documents/datasets/Astrovision/"+scene_name+"/";
 
@@ -80,14 +79,7 @@ is_im_rgb = true;
 
 ground_truth_poses = read_ground_truth_poses_astrovision(scene_path+"poses.mat");
 
-addpath ../functions/
-addpath ../EPnP;
-addpath ../OPnP;
-addpath ../MLPnP;
-addpath ../functions;
-addpath ../RPnP/func;
-addpath ../CPnP/CPnP/
-addpath ../OPnP;
+% prepare pnp functions to compare
 method_names = ["DLT", "nDLT", "nDLT+GN", ...
     "EPNP", "EPnP+GN", "CPnP", ...
     "RPnP", "OPnP", ...
@@ -115,11 +107,11 @@ aggregate_converged_all = zeros(n_changing, n_methods);
 nmc = 100;
 vec_changing = 1:n_changing;
 var_changing = "image number";
+% for each image
 for ii = 1:length(vec_changing)
 
 im_idx = vec_changing(ii);
 im = imread(filenames(im_idx));
-
 
 R = ground_truth_poses(im_idx).rotation;
 r = ground_truth_poses(im_idx).position;
@@ -153,9 +145,11 @@ hold off
     err_reproj_all = zeros(nmc, n_methods);
     time_all = zeros(nmc, n_methods);
     converged_all = zeros(nmc, n_methods);
-
+    
+    % run multiple samples per image
     for i = 1:nmc
         u_craters_tilde = u_craters + mvnrnd([0;0;0],Sig_u, n_meas)';
+        % run all methods
         for method_id = 1:n_methods
             methodtimer = tic;
             try
@@ -218,7 +212,7 @@ hold off
     end
 end
 
-%%
+%% plots
 figure
 fontsize_ax = 16;
 fontsize_label = 20;
@@ -321,8 +315,6 @@ for i = 1:length(tiles)
     
     % Copy the content of the tile to the new figure
     newAxes = copyobj(tiles(i), fig);
-    %newAxes.XLabel.String = '';
-    %newAxes.YLabel.String = '';
 
     % Adjust the position of the copied axes to fill the figure
     newAxes.Position = [0.1 0.1 0.9 0.9];
@@ -380,17 +372,7 @@ for ii = 1:4:length(vec_changing)
     hold off
 end
 
-% ax2 = axes('Position',[0.65 0.65 0.28 0.28]);
-% hold on
-% scatter3(p_craters_in_fov(1,:), p_craters_in_fov(2,:), p_craters_in_fov(3,:), 100, 'w', 'filled')
-
-% exportgraphics(gca, scene_list(scene_id)+"_reconstruction.pdf")
-% % p = profile("info");
-% % profile off
-% disp("")
-
-
-%%
+%% some useful functions
 
 function u = longlat2cartesian(long, lat)
 u = [cos(long) .* cos(lat);

@@ -1,4 +1,6 @@
 function R = weighted_orthogonal_procrustes_gn(A, W)
+    % Sebastien Henry
+    % 
     % Function to find the closest orthogonal matrix B to A in SO(3)
     % with element-wise weights W using lsqnonlin
     
@@ -23,7 +25,7 @@ function R = weighted_orthogonal_procrustes_gn(A, W)
 
     iter = 0;
     max_iter = 1;
-    % lambda = 1e6;
+
     while iter < max_iter
         % compute partial
         dRdg = partial_rodrigues(g);
@@ -32,12 +34,10 @@ function R = weighted_orthogonal_procrustes_gn(A, W)
         epsilon = A_vec - R(:);
 
         % update
-        % dg = (dRdg'*diag(W_vec.^2)*dRdg + lambda * eye(3))\dRdg'*diag(W_vec.^2)*epsilon;
         dg = (W_vec.*dRdg) \ (W_vec.*epsilon);
         
         g = g + dg;
         R = rodrigues2mat(g);
-        % lambda = lambda / 10;
         iter = iter + 1;
     end
 end

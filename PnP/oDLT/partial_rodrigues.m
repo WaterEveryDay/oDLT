@@ -1,9 +1,21 @@
 function dRdg = partial_rodrigues(g)
-% Sebastien Henry
-
-% Rodrigues parameters are such that tan(theta/2)*e, where e is euler
-% vector
-% compute the jacobian between rodrigues and rotation matrix
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Compute the jacobian between rodrigues and rotation matrix.
+% Rodrigues parameters are such that g = tan(theta/2) * e,
+% where e is the Euler vector (axis of rotation).
+%
+% References:
+% - [1] Markley, F. L., & Crassidis, J. L. (2014). Fundamentals of
+%    Spacecraft Attitude Determination and Control (Vol. 33). Springer
+%
+% Inputs:
+% - g (3x1): Rodrigues vector (tangent of half the rotation angle
+% times the unit axis of rotation)
+%
+% Outputs:
+% - dRdg (9x3): partial of the vectorized rotation matrix with respect to g
 
 % retrieve the vectorized rotation matrix
 g1 = g(1); g2 = g(2); g3 = g(3);

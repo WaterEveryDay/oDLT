@@ -1,20 +1,25 @@
-function [R, t] = ... %hbar_uncalibrated, cov_hbar_uncalibrated] = ...
-    pnp_odlt_full(X, U, K, Sig_uu, Sig_pp_all)
-% X = 3xn: 3D points in world
-% U = 3xn: 2D pixel measurements
-% K = 3x3: Calibration matrix
-% Sig_uu = 3x3: Covariance of pixel measurements
-% Sig_pp_all = 3x3xn: Covariance of 3D points
+function [R, t] = pnp_odlt_full(X, U, K, Sig_uu, Sig_pp_all)
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Solve the PnP with optimal DLT and may account for 3D point uncertainty
+% and unisotropic noise
+%
+% References
+% - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
+%
+% Inputs:
+% - X (nx3): 3D coordinates of the points in the world frame
+% - U (nx3): Pixel coordinates of the corresponding points
+% - K (3x3): Camera intrinsic calibration matrix
+% - Sig_uu (3x3): Covariance matrix of pixel measurements
+% - Sig_pp_all = 3x3xn: Covariance of 3D points
+%
+% Outputs:
+% - R (3x3): Rotation matrix from world to camera frame
+% - t (3x1): Translation vector representing the camera position in the world frame
 
-% R = 3 x 3 rotation from world to camera
-% r = 3 x 1 position of camera in world
 
-% arguments
-%     X(:,3) double
-%     U(:,3) double
-%     K(3,3) double
-%     Sig_uu(3,3) double = [1, 0, 0; 0, 1, 0; 0, 0, 0];
-% end
 if nargin < 4
     Sig_uu = [1, 0, 0; 0, 1, 0; 0, 0, 0];
 end
@@ -68,9 +73,9 @@ ASigA = pagemtimes(pagemtimes(pagetranspose(A_all), Sig_eps_pinv_all), A_all);
 sumA = sum(ASigA, 3);
 
 % solve the system by finding smallest eigen vector of A^T A
-[~, Sig, V] = svd(sumA, 'econ');
+[~, D2, V] = svd(sumA, 'econ');
 h = V(:,end);
-inv_cov_h = V * (Sig) * V';
+inv_cov_h = V * D2 * V';
 
 % compute vec(inv(K) * inv(T_U) * H * T_X)
 % and its covariance

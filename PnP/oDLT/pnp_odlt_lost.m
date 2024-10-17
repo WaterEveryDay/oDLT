@@ -1,15 +1,22 @@
-function [R, t] = pnp_opt_dlt_lost(X, U, K, Sig_uu)
-% X (nx3) 3D points in world
-% U (nx3) 2D pixel measurements
-% K (3x3) Calibration matrix
-% Sig_uu (3x3) Pixel covariance (optional)
+function [R, t] = pnp_odlt_lost(X, U, K, Sig_uu)
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Solve the PnP with optimal DLT and refine the position with LOST
+%
+% References:
+% - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
+%
+% Inputs:
+% - X (nx3): 3D coordinates of the points in the world frame
+% - U (nx3): Pixel coordinates of the corresponding points
+% - K (3x3): Camera intrinsic calibration matrix
+% - Sig_uu (3x3): Covariance matrix of pixel measurements
+%
+% Outputs:
+% - R (3x3): Rotation matrix from world to camera frame
+% - t (3x1): Translation vector representing the camera position in the world frame
 
-% arguments
-%     X(:,3) double
-%     U(:,3) double
-%     K(3,3) double
-%     Sig_uu(3,3) double = [1, 0, 0; 0, 1, 0; 0, 0, 0];
-% end
 if nargin < 4
     Sig_uu = [1, 0, 0; 0, 1, 0; 0, 0, 0];
 end

@@ -18,11 +18,10 @@ function [rI] = refine_LOST(xyb_all, pI_all, T_ItoC, R_xx, rI)
 %   positions of the observed objects in the inertial frame (resection)
 %   OR
 %   positions of of the cameras (intersection)
-% - T_ItoC_all (3x3xn_meas): Rotation matrices from inertial to camera
-%   frame for each of the respective measurements
-% - R_xx_all (3x3xn_meas): Covariance matrices of the respective
+% - T_ItoC (3x3): Rotation matrix from inertial to camera frame
+% - R_xx (3x3): Covariance matrix of the respective
 %   measurements. ! this script assumes isotropic noise and only cares
-%   about the (1, 1, ii) entry of R_xx = sig_xi^2.
+%   about the (1, 1) entry of R_xx = sig_xi^2.
 %
 % Outputs:
 % - rI: position of the triangulated point in the inertial frame.

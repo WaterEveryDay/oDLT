@@ -1,19 +1,22 @@
-function [R, t] = ... %hbar_uncalibrated, cov_hbar_uncalibrated] = ...
-    pnp_odlt(X, U, K, Sig_uu)
-% X = 3xn: 3D points in world
-% U = 3xn: 2D pixel measurements
-% K = 3x3: Calibration matrix
-% Sig_uu = 3x3: Covariance of pixel measurements
+function [R, t] = pnp_odlt(X, U, K, Sig_uu)
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Solve the PnP with optimal DLT
+%
+% References:
+% - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
+%
+% Inputs:
+% - X (nx3): 3D coordinates of the points in the world frame
+% - U (nx3): Pixel coordinates of the corresponding points
+% - K (3x3): Camera intrinsic calibration matrix
+% - Sig_uu (3x3): Covariance matrix of pixel measurements
+%
+% Outputs:
+% - R (3x3): Rotation matrix from world to camera frame
+% - t (3x1): Translation vector representing the camera position in the world frame
 
-% R = 3 x 3 rotation from world to camera
-% r = 3 x 1 position of camera in world
-
-% arguments
-%     X(:,3) double
-%     U(:,3) double
-%     K(3,3) double
-%     Sig_uu(3,3) double = [1, 0, 0; 0, 1, 0; 0, 0, 0];
-% end
 if nargin < 4
     Sig_uu = [1, 0, 0; 0, 1, 0; 0, 0, 0];
 end
@@ -29,29 +32,29 @@ K_inv = invert_K(K);
 A = build_dlt_system(X_scaled, U_scaled);
 
 % solve for an initial guess using a subset of the system
-n_small = min(2*n, min( max(30, floor(n/10)), 100) );
+n_small = min(2*n, min( max(40, floor(n/10)), 100) );
 % n_small = 2*n;
-[~,~,V] = svd(A(randperm(2*n, n_small), :), "econ");
+idx_small = randperm(2*n, n_small); % floor(linspace(1, 2*n, n_small));
+
+[~,~,V] = svd(A(idx_small, :), 'econ');
 
 h = V(:,end);
 H_init = reshape(h, 3, 4);
 
 % compute weights for the DLT system
 sig_u = T_U(1,1)*sqrt(Sig_uu(1,1));
-X_proj = H_init * [X_scaled, ones(n, 1)]';
-scale_3 = X_proj(3,:);
-q = 1./ (scale_3 * sig_u);
+scale_3 = H_init(3,:) * [X_scaled, ones(n, 1)]';
+q = 1./ (sig_u*scale_3);
 
 % apply weights to the DLT system
 A = kron(q', [1; 1]) .* A;
 
 % solve the system by finding smallest eigen vector of A^T A
-[~, Sig, V] = svd(A, 'econ');
+[~, D, V] = svd(A, 'econ');
 h = V(:,end);
-inv_cov_h = V * (Sig.^2) * V';
+inv_cov_h = V * (D.^2) * V';
 
-% compute vec(inv(K) * inv(T_U) * H * T_X)
-% and its covariance
+% bring solution back to regular space
 [h, inv_cov_h] = denormalize_kronecker(h, inv_cov_h, K_inv, T_U_inv, T_X);
 
 % solve the Weighted Orthogonal Procrustes Problem

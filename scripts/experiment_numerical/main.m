@@ -1,3 +1,6 @@
+% Sebastien Henry
+% Oct 17 2024 - FOR REVIEW ONLY
+
 close all
 clear all
 clc
@@ -24,7 +27,7 @@ r = [0; 0; 0];
 % camera intrinsics
 dx = 0.001250;
 dy = dx;
-K = [1/dx, 0, 320; 0, 1/dy, 240; 0, 0, 1]; %eye(3);
+K = [1/dx, 0, 320; 0, 1/dy, 240; 0, 0, 1];
 
 verbose = true;
 
@@ -45,7 +48,6 @@ var_changing = "n";
 
 n_meas_vec = 10:10:100;
 n_meas_vec_timing = floor(logspace(1, 3.3, 20));
-% n_meas_vec = [10, 100, 500, 1000];
 sig_u_vec = [0.001, 1:5];
 outlier_percentage_vec = [0, 5, 10, 15, 20, 25];
 
@@ -83,44 +85,44 @@ Sig_pp = diag([sig_p^2, sig_p^2, sig_p^2]);
 
 %% define method names and functions to call
 if calibrated
-method_names = ["DLT", "nDLT", "nDLT+GN", ...
-    "EPNP", "EPnP+GN", "CPnP", ...
-    "RPnP", "OPnP", ...
-    "oDLT (ours)", "oDLT+LOST (ours)"];
+    method_names = ["DLT", "nDLT", "nDLT+GN", ...
+        "EPNP", "EPnP+GN", "CPnP", ...
+        "RPnP", "OPnP", ...
+        "oDLT (ours)", "oDLT+LOST (ours)"];
 
-funs = {@pnp_dlt, @pnp_dlt_normalized, @pnp_dlt_normalized_gn, ...
-    @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
-    @pnp_rpnp, @pnp_opnp, ...
-    @pnp_odlt, @pnp_odlt_full};
+    funs = {@pnp_dlt, @pnp_dlt_normalized, @pnp_dlt_normalized_gn, ...
+        @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
+        @pnp_rpnp, @pnp_opnp, ...
+        @pnp_odlt, @pnp_odlt_lost};
 
-linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
-markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
-colors = colormap(turbo(10));
-n_methods = length(method_names);
+    linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
+    markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
+    colors = colormap(turbo(10));
+    n_methods = length(method_names);
 else
     idx = [2, 9];
     method_names = ["DLT", "nDLT (uncal)", "nDLT+GN", ...
-    "EPNP", "EPnP+GN", "CPnP", ...
-    "RPnP", "OPnP", ...
-    "oDLT (uncal) (ours)", "oDLT+LOST (ours)"];
+        "EPNP", "EPnP+GN", "CPnP", ...
+        "RPnP", "OPnP", ...
+        "oDLT (uncal) (ours)", "oDLT+LOST (ours)"];
 
-funs = {@pnp_dlt, @pnp_dlt_normalized_uncalibrated, @pnp_dlt_normalized_gn, ...
-    @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
-    @pnp_rpnp, @pnp_opnp, ...
-    @pnp_odlt_uncalibrated, @pnp_odlt_lost};
+    funs = {@pnp_dlt, @pnp_dlt_normalized_uncalibrated, @pnp_dlt_normalized_gn, ...
+        @pnp_epnp, @pnp_epnp_gn, @pnp_cpnp, ...
+        @pnp_rpnp, @pnp_opnp, ...
+        @pnp_odlt_uncalibrated, @pnp_odlt_lost};
 
-linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
-markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
-colors = colormap(turbo(10));
+    linestyles = ["-", "--", "-.", ":", "-", "--", "-.", ":", "-", "--"];
+    markerstyles = ['p', 's', 'd', '*', 'x', '^', 'v', '>', '<', 'o'];
+    colors = colormap(turbo(10));
 
 
-method_names = method_names(idx);
-funs = funs(idx);
-linestyles = linestyles(idx);
-markerstyles = markerstyles(idx);
-colors = colors(idx, :);
+    method_names = method_names(idx);
+    funs = funs(idx);
+    linestyles = linestyles(idx);
+    markerstyles = markerstyles(idx);
+    colors = colors(idx, :);
 
-n_methods = length(method_names);
+    n_methods = length(method_names);
 end
 
 %% define bounding boxes for spawning 3D points
@@ -153,7 +155,6 @@ aggregate_time_all = zeros(n_changing, n_methods);
 
 % The true projection from 3D to pixel
 H = K*R_I2C*[eye(3), -r];
-disp(R_I2C)
 
 % iterate over the number of measurements.
 for ii = 1:n_changing
@@ -166,7 +167,7 @@ for ii = 1:n_changing
         case "outlier"
             outlier_percentage = outlier_percentage_vec(ii);
     end
-    
+
     err_rot_all = zeros(nmc, n_methods);
     err_pos_all = zeros(3, nmc, n_methods);
     err_reproj_all = zeros(nmc, n_methods);
@@ -198,18 +199,18 @@ for ii = 1:n_changing
         for method_id = 1:n_methods
             n_args_in = nargin(funs{method_id});
             n_args_out = nargout(funs{method_id});
-            
+
             switch n_args_in
                 case 2
                     args = {Xtilde', Utilde'};
                 case 3
                     args = {Xtilde', Utilde', K};
-               case 4
+                case 4
                     args = {Xtilde', Utilde', K, Sig_uu};
-               case 5
+                case 5
                     args = {Xtilde', Utilde', K, Sig_uu, repmat(Sig_pp, 1, 1, n_meas)};
             end
-            
+
             methodtimer = tic;
             switch n_args_out
                 case 2
@@ -239,7 +240,7 @@ for ii = 1:n_changing
 
         end
     end
-    
+
     % aggregate results over all monte carlo samples for each method
     aggregate_err_rot_all(ii, :) = sqrt(mean(err_rot_all.^2, 1))*180/pi;
     aggregate_err_rot_95_percentile_all(ii,:) = prctile(err_rot_all, 95, 1)*180/pi;
@@ -273,7 +274,7 @@ for ii = 1:n_changing
         for method_id = 1:n_methods
             fprintf('%-24s: %8.5f\n', method_names(method_id), aggregate_err_reproj_all(ii, method_id));
         end
-        
+
         if ~calibrated
             disp("### fx RMSE")
             for method_id = 1:n_methods
@@ -416,7 +417,7 @@ grid on;
 t4 = nexttile;
 for method_id = 1:n_methods
     if method_id > 1
-    hold on
+        hold on
     end
     loglog(vec_changing, aggregate_time_all(:, method_id)*1000, ...
         "LineStyle",linestyles(method_id), ...
@@ -445,7 +446,7 @@ figHeight = 300;
 for i = 1:length(tiles)
     % Create a new figure with consistent size
     fig = figure('Visible', 'off', 'Position', [100, 100, figWidth, figHeight]);
-    
+
     % Copy the content of the tile to the new figure
     newAxes = copyobj(tiles(i), fig);
     newAxes.XLabel.String = '';
@@ -456,7 +457,7 @@ for i = 1:length(tiles)
 
     set(newAxes,'FontSize',fontsize_ax)
     set(newAxes,'linewidth',2)
-    
+
     % Save the figure
     switch i
         case 4
@@ -473,7 +474,7 @@ for i = 1:length(tiles)
     % print(fig, filename, '-dpng', '')
 
     % saveas(fig, filename)
-    
+
     % Close the figure
     close(fig)
 end
@@ -510,41 +511,5 @@ hold on
 scatter(U(1,:), U(2,:));
 scatter(Utilde(1,:), Utilde(2,:), '*');
 legend("truth", "meas")
-
-%% functions
-function err = error_geometric(U, X, Phat)
-% U = 3xnmeas
-% X = 4xnmeas
-% H = camera matrix
-sums = 0;
-n_meas = size(U, 2);
-U = U./U(3,:);
-Uhat = Phat*X;
-Uhat = Uhat./Uhat(3,:);
-for i = 1:n_meas
-    sums = sums + norm(U(:,i) - Uhat(:,i))^2;
-end
-err = sum(sqrt((Uhat(1,:)-U(1,:)).^2+(Uhat(2,:)-U(2,:)).^2))/n_meas;
-%err = sums/n_meas;
-%err = norm(U - Uhat)^2;
-end
-
-function [err,Urep]=reprojection_error_usingRT(Xw,U,R,T,A)
-%clear all; close all; load reprojection_error_usingRT;
-n=size(Xw,1);
-
-P=A*[R,T];
-Xw_h=[Xw,ones(n,1)];
-Urep_=(P*Xw_h')';
-
-%project reference points into the image plane
-Urep=zeros(n,2);
-Urep(:,1)=Urep_(:,1)./Urep_(:,3);
-Urep(:,2)=Urep_(:,2)./Urep_(:,3);
-
-%reprojection error
-err_=sqrt((U(:,1)-Urep(:,1)).^2+(U(:,2)-Urep(:,2)).^2);
-err=sum(err_)/n;
-end
 
 

@@ -1,9 +1,20 @@
 function [R, t, K] = pnp_dlt_normalized_uncalibrated(X, U)
-% X = n x 3
-% U = n x 3
-
-% R = rotation from world to camera
-% r = position of camera in world
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Solve the PnP with the normalized DLT in the case of an uncalibrated camera
+%
+% References:
+% - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
+%
+% Inputs:
+% - X (nx3): 3D coordinates of the points in the world frame
+% - U (nx3): Pixel coordinates of the corresponding points
+%
+% Outputs:
+% - R (3x3): Rotation matrix from world to camera frame
+% - t (3x1): Translation vector representing the camera position in the world frame
+% - K (3x3): Camera intrinsic calibration matrix
 
 n = size(X, 1);
 
@@ -21,5 +32,5 @@ H = reshape(h, 3, 4);
 
 % de-normalize and un-calibrate the camera matrix
 H = T_U_inv * H * T_X;
-[R, t, K] = decompose_P(H);
+[R, t, K] = decompose_H(H);
 end

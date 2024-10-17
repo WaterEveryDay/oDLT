@@ -1,19 +1,22 @@
-function [R, t, K] = ... %hbar_uncalibrated, cov_hbar_uncalibrated] = ...
-    pnp_odlt_uncalibrated(X, U, Sig_uu)
-% X = 3xn: 3D points in world
-% U = 3xn: 2D pixel measurements
-% K = 3x3: Calibration matrix
-% Sig_uu = 3x3: Covariance of pixel measurements
+function [R, t, K] = pnp_odlt_uncalibrated(X, U, Sig_uu)
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Solve the PnP with optimal DLT in the case of an uncalibrated camera
+%
+% References
+% - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
+%
+% Inputs:
+% - X (nx3): 3D coordinates of the points in the world frame
+% - U (nx3): Pixel coordinates of the corresponding points
+% - Sig_uu (3x3): Covariance matrix of pixel measurements
+%
+% Outputs:
+% - R (3x3): Rotation matrix from world to camera frame
+% - t (3x1): Translation vector representing the camera position in the world frame
+% - K (3x3): Camera intrinsic calibration matrix
 
-% R = 3 x 3 rotation from world to camera
-% r = 3 x 1 position of camera in world
-
-% arguments
-%     X(:,3) double
-%     U(:,3) double
-%     K(3,3) double
-%     Sig_uu(3,3) double = [1, 0, 0; 0, 1, 0; 0, 0, 0];
-% end
 if nargin < 4
     Sig_uu = [1, 0, 0; 0, 1, 0; 0, 0, 0];
 end
@@ -30,7 +33,6 @@ A = build_dlt_system(X_scaled, U_scaled);
 % solve for an initial guess using a subset of the system
 n_small = min(2*n, min( max(30, floor(n/10)), 100) );
 % n_small = 2*n;
-% rng(1)
 [~,~,V] = svd(A(randperm(2*n, n_small), :), "econ");
 
 h = V(:,end);
@@ -46,13 +48,13 @@ inv_scale_norm_sig = 1./ (scale_3 * sig_u);
 A = kron(inv_scale_norm_sig', [1; 1]) .* A;
 
 % solve the system by finding smallest eigen vector of A^T A
-[~, Sig, V] = svd(A, 'econ');
+[~, ~, V] = svd(A, 'econ');
 h = V(:,end);
 
 % de-normalize and un-calibrate the camera matrix
 H = reshape(h, 3, 4);
 H = T_U_inv * H * T_X;
-[R, t, K] = decompose_P(H);
+[R, t, K] = decompose_H(H);
 end
     
 

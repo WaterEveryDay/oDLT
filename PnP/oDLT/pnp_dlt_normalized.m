@@ -1,14 +1,27 @@
 function [R, t] = pnp_dlt_normalized(X, U, K)
-% X = n x 3
-% U = n x 3
-
-% R = rotation from world to camera
-% r = position of camera in world
+% Authors: Sebastien Henry
+% Last Modified: October 2024
+%
+% Solve the PnP with the normalized DLT
+%
+% References:
+% - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
+%
+% Inputs:
+% - X (nx3): 3D coordinates of the points in the world frame
+% - U (nx3): Pixel coordinates of the corresponding points
+% - K (3x3): Camera intrinsic calibration matrix
+%
+% Outputs:
+% - R (3x3): Rotation matrix from world to camera frame
+% - t (3x1): Translation vector representing the camera position in the world frame
 
 n = size(X, 1);
 K_inv = invert_K(K);
 
 X = [X, ones(n, 1)];
+
+% center and scale points
 [U_scaled, ~, T_U_inv] = normalize_meas(U);
 [X_scaled, T_X] = normalize_points3D(X);
 
