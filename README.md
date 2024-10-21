@@ -9,7 +9,7 @@ For more information on the underlying mathematics you may find the preprint at 
 
 If you use some of the code for your work, please cite:
 
-      @misc{henry2024optimaldltbasedsolutionsperspectivenpoint,
+      @misc{henry2024oDLT,
             title={Optimal DLT-based Solutions for the Perspective-n-Point}, 
             author={Sébastien Henry and John A. Christian},
             year={2024},
