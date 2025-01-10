@@ -5,6 +5,13 @@ clc
 vesta_pt_cloud = pcread("/Users/sebastienhenry/Documents/datasets/Astrovision/vesta_3145k.ply");
 vesta_crater_table = readtable("/Users/sebastienhenry/Documents/datasets/vesta_crater_database/database_700m.xlsx");
 
+addpath ../../PnP/oDLT/;
+addpath ../../PnP/EPnP/
+addpath ../../PnP/RPnP/func;
+addpath ../../PnP/CPnP/CPnP/
+addpath ../../PnP/OPnP;
+addpath ../../utils/
+
 %% load the crater database and extract 3D positions of craters
 a_craters = longlat2cartesian(vesta_crater_table{:,'LONGITUDE_CIRCLE'}'*pi/180, vesta_crater_table{:,'LATITUDE_CIRCLE'}'*pi/180);
 crater_threshold = vesta_crater_table{:,"DIAM_CIRCLE"} < 100000 & vesta_crater_table{:,"DIAM_CIRCLE"} > 700;
