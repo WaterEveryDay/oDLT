@@ -126,5 +126,5 @@ if d(end) / d(1) < 1e-7
     d(end) = 1e-7*d(1);
 end
 
-cov_h = V * diag(1./d.^2) * V';
+cov_h = pinv(V * diag(d.^2) * V');
 end
