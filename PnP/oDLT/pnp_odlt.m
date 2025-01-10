@@ -1,4 +1,4 @@
-function [R, t] = pnp_odlt(X, U, K, Sig_uu)
+function [R, t] = pnp_odlt_vfast_normalized(X, U, K, Sig_uu)
 % Authors: Sebastien Henry
 % Last Modified: October 2024
 %
@@ -24,8 +24,11 @@ end
 n = size(X, 1);
 K_inv = invert_K(K);
 
+U = U*K_inv';
+K = eye(3);
+K_inv = eye(3);
 % normalize the measurements and 3D points for a better behaviour
-[X_scaled, T_X, ~] = normalize_points3D(X);
+[X_scaled, T_X, T_X_inv] = normalize_points3D(X);
 [U_scaled, T_U, T_U_inv] = normalize_meas(U);
 
 % build the matrix for DLT system
@@ -42,7 +45,7 @@ h = V(:,end);
 H_init = reshape(h, 3, 4);
 
 % compute weights for the DLT system
-sig_u = T_U(1,1)*sqrt(Sig_uu(1,1));
+sig_u = sqrt(Sig_uu(1,1));
 scale_3 = H_init(3,:) * [X_scaled, ones(n, 1)]';
 q = 1./ (sig_u*scale_3);
 
@@ -59,4 +62,5 @@ inv_cov_h = V * (D.^2) * V';
 
 % solve the Weighted Orthogonal Procrustes Problem
 [R, t] = h_to_se3_with_cov_procrustes(h, inv_cov_h);
+
 end

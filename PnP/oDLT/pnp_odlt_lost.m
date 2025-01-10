@@ -1,8 +1,8 @@
-function [R, t] = pnp_odlt_lost(X, U, K, Sig_uu)
+function [R, t] = pnp_odlt_vfast_normalized(X, U, K, Sig_uu)
 % Authors: Sebastien Henry
 % Last Modified: October 2024
 %
-% Solve the PnP with optimal DLT and refine the position with LOST
+% Solve the PnP with optimal DLT
 %
 % References:
 % - [1] S. Henry and J. A. Christian. Optimal DLT-based Solutions for the Perspective-n-Point. (2024).
@@ -21,13 +21,50 @@ if nargin < 4
     Sig_uu = [1, 0, 0; 0, 1, 0; 0, 0, 0];
 end
 
-% solve optimal DLT for rotation
-[R, t] = pnp_odlt(X, U, K, Sig_uu);
-
-% solve optimal DLT for position
+n = size(X, 1);
 K_inv = invert_K(K);
-r = refine_LOST(K_inv*U', X', R, K_inv*Sig_uu*K_inv', -R'*t);
-if ~isnan(r)
-    t = -R*r;
-end
+
+U = U*K_inv';
+K = eye(3);
+K_inv = eye(3);
+% normalize the measurements and 3D points for a better behaviour
+[X_scaled, T_X, T_X_inv] = normalize_points3D(X);
+[U_scaled, T_U, T_U_inv] = normalize_meas(U);
+
+% build the matrix for DLT system
+A = build_dlt_system(X_scaled, U_scaled);
+
+% solve for an initial guess using a subset of the system
+n_small = min(2*n, min( max(40, floor(n/10)), 100) );
+idx_small = randperm(2*n, n_small);
+
+[~,~,V] = svd(A(idx_small, :), 'econ');
+
+h = V(:,end);
+H_init = reshape(h, 3, 4);
+
+% compute weights for the DLT system
+sig_u = sqrt(Sig_uu(1,1));
+scale_3 = H_init(3,:) * [X_scaled, ones(n, 1)]';
+q = 1./ (sig_u*scale_3);
+
+% apply weights to the DLT system
+A = kron(q', [1; 1]) .* A;
+
+% solve the system by finding smallest eigen vector of A^T A
+[~, D, V] = svd(A, 'econ');
+h = V(:,end);
+inv_cov_h = V * (D.^2) * V';
+
+% bring solution back to regular space
+[h, inv_cov_h] = denormalize_kronecker(h, inv_cov_h, K_inv, T_U_inv, T_X);
+
+% solve the Weighted Orthogonal Procrustes Problem
+[R, ~] = h_to_se3_with_cov_procrustes(h, inv_cov_h);
+
+R_opt_norm = T_U * R * T_X_inv(1:3,1:3);
+t_opt_norm = -A(:,10:12)\(A(:,1:9)*R_opt_norm(:));
+
+% de-normalize and un-calibrate the translation
+t = T_U_inv * [R_opt_norm, t_opt_norm] * T_X(:,end);
 end
