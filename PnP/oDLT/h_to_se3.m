@@ -8,11 +8,11 @@ function [R, t] = h_to_se3(h)
 % Inputs:
 % - h (12x1): Unscaled and unorthogonalized camera matrix 
 %   H = [R, -R*r], where R is the rotation matrix and r is the 
-%   translation vector.
+%   camera position vector in the world frame.
 %
 % Outputs:
 % - R (3x3): Rotation matrix from world to camera frame
-% - t (3x1): Translation vector representing the camera position in the world frame
+% - t (3x1): Translation vector
 
 
 % extract the rotation matrix and compute the scaling

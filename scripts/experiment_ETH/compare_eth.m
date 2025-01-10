@@ -152,7 +152,7 @@ for view_id = 1:n_views
 end
 
 hold on
-pcshow(x3dSol', colorAll'/256, BackgroundColor='w')
+pcshow(x3dSol', colorAll'/256, BackgroundColor='w', MarkerSize=10)
 hold off
 xlim([-50, 50])
 ylim([-50, 50])
